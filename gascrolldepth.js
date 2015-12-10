@@ -16,7 +16,9 @@
     pixelDepth: true,
     nonInteraction: true,
     gaGlobal: false,
-    gtmOverride: false
+    gtmOverride: false,
+    markGap: 25,
+    customMarks: []
   };
 
   var cache = [],
@@ -267,16 +269,25 @@
 
       }
 
-    }
+    } 
 
-    function calculateMarks(docHeight) {
-      return {
-        '25%' : parseInt(docHeight * 0.25, 10),
-        '50%' : parseInt(docHeight * 0.50, 10),
-        '75%' : parseInt(docHeight * 0.75, 10),
-        // 1px cushion to trigger 100% event in iOS
-        '100%': docHeight - 5
-      };
+    function calculateMarks(docHeight, gap, customMarks) {
+      var marks = {};
+      gap = (!gap) ? 25 : gap;
+
+      for (var i = 1; i < (100 / gap); i++){
+        marks[gap * i + '%'] = parseInt(docHeight * gap * i / 100, 10);
+      }
+
+      if (customMarks.constructor === Array) {
+        customMarks.forEach(function (mark) {
+          marks[mark + '%'] = parseInt(docHeight * mark / 100, 10);
+        });
+      }
+
+      marks['100%'] = docHeight - 5;
+
+      return marks;
     }
 
     function checkMarks(marks, scrollDistance, timing) {
@@ -363,10 +374,11 @@
         scrollDistance = getPageYOffset() + winHeight,
 
         // Recalculate percentage marks
-        marks = calculateMarks(docHeight),
+        marks = calculateMarks(docHeight, options.markGap, options.customMarks),
 
         // Timing
         timing = +new Date - startTime;
+
 
       // If all marks already hit, unbind scroll event
       if (cache.length >= 4 + options.elements.length) {
